@@ -262,8 +262,13 @@ void GPIO_SetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
     assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
     assert_param(IS_GPIO_PIN(GPIO_Pin));
 
-    (GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = GPIO_Pin;
-    (GPIOx->UB_MASKED[(uint8_t) ((GPIO_Pin) >> 8)]) = GPIO_Pin;
+    /* fix bug 2019.05.03 */
+    //(GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = GPIO_Pin;
+    //(GPIOx->UB_MASKED[(uint8_t) ((GPIO_Pin) >> 8)]) = GPIO_Pin;
+    if (GPIO_Pin < 256)
+        (GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = GPIO_Pin;
+    else
+        (GPIOx->UB_MASKED[(uint8_t) ((GPIO_Pin) >> 8)]) = GPIO_Pin;
 }
 
 /**
@@ -282,8 +287,13 @@ void GPIO_ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
     assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
     assert_param(IS_GPIO_PIN(GPIO_Pin));
 
-    (GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = ~(GPIO_Pin);
-    (GPIOx->UB_MASKED[(uint8_t) (GPIO_Pin >> 8)]) = ~(GPIO_Pin);
+    /* fix bug 2019.05.03 */
+    //(GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = ~(GPIO_Pin);
+    //(GPIOx->UB_MASKED[(uint8_t) (GPIO_Pin >> 8)]) = ~(GPIO_Pin);
+    if (GPIO_Pin < 256)
+        (GPIOx->LB_MASKED[(uint8_t) (GPIO_Pin)]) = ~(GPIO_Pin);
+    else
+        (GPIOx->UB_MASKED[(uint8_t) (GPIO_Pin >> 8)]) = ~(GPIO_Pin);
 }
 
 /**
