@@ -104,9 +104,10 @@ FlagStatus PHY_Init(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin_MDC, uint16_t GPIO_Pi
     GPIO_PinPadConfig(GPIOB, GPIO_PinSource6, GPIO_PuPd_UP|GPIO_InputBufferEnable|GPIO_CMOS);
 
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, PAD_AF1);
-    GPIO_PinPadConfig(GPIOD, GPIO_PinSource6, GPIO_PuPd_DOWN);
-    GPIOD->OUTENSET = GPIO_Pin_6;
-    GPIO_SetBits(GPIOD, GPIO_Pin_6);
+    GPIO_PinPadConfig(GPIOD, GPIO_PinSource6, GPIO_PuPd_UP);
+    // for this GPIOD pin 6, keep the following sequence, set the value & set the output enable
+    GPIO_SetBits(GPIOD, GPIO_Pin_6); // PHY reset pin
+    GPIOD->OUTENSET = GPIO_Pin_6; // PHY reset pin
 #endif
 
     /* Set GPIOs for MDIO and MDC */
@@ -117,6 +118,7 @@ FlagStatus PHY_Init(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin_MDC, uint16_t GPIO_Pi
 
     GPIO_Init(miim_PORT, &GPIO_InitStructure);
 
+    PHY_Reset(0); // phy reset
     bitstatus = PHY_GetId();
 
     return bitstatus;
@@ -132,8 +134,11 @@ FlagStatus PHY_Init(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin_MDC, uint16_t GPIO_Pi
  */
 void PHY_Reset(Reset_Type reset)
 {
-    if (reset == Hardware) {
+/*
+if (reset == Hardware) {
 #ifdef W7500P
+// don't touch PHY reset pin
+// pls, use MDIO PHY reset.
         GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, PAD_AF1);
         GPIO_PinPadConfig(GPIOD, GPIO_PinSource6, GPIO_PuPd_DOWN);
         GPIOD->OUTENSET = GPIO_Pin_6;
@@ -143,8 +148,9 @@ void PHY_Reset(Reset_Type reset)
         miim_delay(250);
 #endif
     } else {
-        MDIO_SetData(PHYREG_CONTROL, PHYREG_CONTROL_RESET);      // PHY Reset
-    }
+*/
+    MDIO_SetData(PHYREG_CONTROL, PHYREG_CONTROL_RESET);      // PHY Reset
+//    }
 }
 
 /**
