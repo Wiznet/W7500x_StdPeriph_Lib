@@ -33,9 +33,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
-#include "W7500x_gpio.h"
-#include "i2c.h"
+#include "main.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -56,14 +54,14 @@ int main()
     uint8_t r_data[1] ={0,};
 
 	SystemInit();
-//GPIO setting for I2C	
-	conf.scl_port = PAD_PC;
-	conf.scl_pin = GPIO_Pin_15;
-    conf.sda_port = PAD_PC;
-	conf.sda_pin = GPIO_Pin_14;
-//     
+//GPIO setting for I2C
+	conf.scl_port = PAD_PA;
+	conf.scl_pin = GPIO_Pin_9;
+    conf.sda_port = PAD_Pa;
+	conf.sda_pin = GPIO_Pin_10;
+//
     I2C_Init(&conf);
-	
+
 	I2C_Write(&conf,SLAVE_ADDRESS,data,1);
 	I2C_Read(&conf,SLAVE_ADDRESS,r_data ,1);
 

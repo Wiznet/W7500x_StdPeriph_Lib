@@ -29,14 +29,13 @@
 #include "W7500x_gpio.h"
 
 GPIO_InitTypeDef GPIO_InitDef;
+uint32_t scl_port_num;
+uint32_t scl_pin_index;
+uint32_t sda_port_num;
+uint32_t sda_pin_index;
 
 uint32_t I2C_Init(I2C_ConfigStruct* conf)
 {
-    uint32_t scl_port_num;
-    uint32_t scl_pin_index;
-    uint32_t sda_port_num;
-    uint32_t sda_pin_index;
-    
     scl_port_num = conf->scl_port;
     scl_pin_index = conf->scl_pin;
     
@@ -45,8 +44,9 @@ uint32_t I2C_Init(I2C_ConfigStruct* conf)
     
     //SCL setting
     GPIO_InitDef.GPIO_Pin = scl_pin_index;
-    GPIO_InitDef.GPIO_Mode = GPIO_Mode_OUT;
-
+    GPIO_InitDef.GPIO_Direction = GPIO_Direction_OUT;
+	GPIO_InitDef.GPIO_Pad = GPIO_PuPd_UP;
+	GPIO_InitDef.GPIO_AF =  PAD_AF1;
     if(scl_port_num == 0)
     {
         GPIO_Init(GPIOA, &GPIO_InitDef);
@@ -62,7 +62,6 @@ uint32_t I2C_Init(I2C_ConfigStruct* conf)
         GPIO_Init(GPIOC, &GPIO_InitDef);
         GPIO_SetBits(GPIOC, scl_pin_index);
     }
-
     else
     {
         printf("SCL pin Port number error\r\n");
@@ -71,7 +70,9 @@ uint32_t I2C_Init(I2C_ConfigStruct* conf)
     
     //SDA setting
     GPIO_InitDef.GPIO_Pin = sda_pin_index;
-    GPIO_InitDef.GPIO_Mode = GPIO_Mode_IN;
+    GPIO_InitDef.GPIO_Direction = GPIO_Direction_IN;
+	GPIO_InitDef.GPIO_Pad = GPIO_PuPd_UP;
+	GPIO_InitDef.GPIO_AF =  PAD_AF1;
     if(sda_port_num == 0)
     {
         GPIO_Init(GPIOA, &GPIO_InitDef);
@@ -93,76 +94,62 @@ uint32_t I2C_Init(I2C_ConfigStruct* conf)
         return 1;
     }
     
-    PAD_AFConfig((PAD_Type) scl_port_num, scl_pin_index, (PAD_AF_TypeDef) PAD_AF1);
-    PAD_AFConfig((PAD_Type) sda_port_num, sda_pin_index, (PAD_AF_TypeDef) PAD_AF1);
-
     return 0;
 }
 
 void I2C_WriteBitSCL(I2C_ConfigStruct* conf, uint8_t data)
 {
-    uint32_t scl_port_num = conf->scl_port;
-    uint32_t scl_pin_index = conf->scl_pin;
-
     if(scl_port_num == 0)
     {
-        if(data == 1)
-            GPIO_SetBits(GPIOA, scl_pin_index);
-        else
-            GPIO_ResetBits(GPIOA, scl_pin_index);
+        if(data == 1)	
+			GPIO_SetBits(GPIOA, scl_pin_index);
+        else			
+			GPIO_ResetBits(GPIOA, scl_pin_index);
     }
     else if(scl_port_num == 1)
     {
-        if(data == 1)
-            GPIO_SetBits(GPIOB, scl_pin_index);
-        else
-            GPIO_ResetBits(GPIOB, scl_pin_index);
+        if(data == 1)	
+			GPIO_SetBits(GPIOB, scl_pin_index);
+        else			
+			GPIO_ResetBits(GPIOB, scl_pin_index);
     } 
     else if(scl_port_num == 2)
     {
-        if(data == 1)
-            GPIO_SetBits(GPIOC, scl_pin_index);
-        else
-            GPIO_ResetBits(GPIOC, scl_pin_index);
+        if(data == 1)	
+			GPIO_SetBits(GPIOC, scl_pin_index);
+        else			
+			GPIO_ResetBits(GPIOC, scl_pin_index);
     }
-
 }
 
 void I2C_WriteBitSDA(I2C_ConfigStruct* conf, uint8_t data)
 {
-    uint32_t sda_port_num = conf->sda_port;
-    uint32_t sda_pin_index =conf->sda_pin;
-
-    if(sda_port_num == 0)
+ 	if(sda_port_num == 0)
     {
         if(data == 1)
-            GPIOA->OUTENCLR = sda_pin_index;
-        else
-            GPIOA->OUTENSET = sda_pin_index;
+			GPIO_SetBits(GPIOA, sda_pin_index);
+        else		 
+			GPIO_ResetBits(GPIOA, sda_pin_index);
     }
-    else if(sda_port_num == 1)
+	else if(sda_port_num == 1)
     {
-        if(data == 1)
-            GPIOB->OUTENCLR = sda_pin_index;
-        else
-            GPIOB->OUTENSET = sda_pin_index;
-    } 
-    else if(sda_port_num == 2)
-    {
-        if(data == 1)
-            GPIOC->OUTENCLR = sda_pin_index;
-        else
-            GPIOC->OUTENSET = sda_pin_index;
+        if(data == 1) 
+			GPIO_SetBits(GPIOB, sda_pin_index);
+        else    	  
+			GPIO_ResetBits(GPIOB, sda_pin_index);
     }
+	else if(sda_port_num == 2)
+    {
+        if(data == 1)
+			GPIO_SetBits(GPIOC, sda_pin_index);
+        else 	   	  
+			GPIO_ResetBits(GPIOC, sda_pin_index);
+    }
+    
 }
 
 uint8_t I2C_ReadBitSDA(I2C_ConfigStruct* conf)
 {
-    uint32_t sda_port_num = conf->sda_port;
-    uint32_t sda_pin_index = conf->sda_pin;
-    
-	
-	
     if(sda_port_num == 0)
     {
         if(GPIOA->DATA & sda_pin_index)
@@ -184,47 +171,56 @@ uint8_t I2C_ReadBitSDA(I2C_ConfigStruct* conf)
         else
             return 0;
     }
-   
     return 0;
 }
 
 void I2C_Start(I2C_ConfigStruct* conf)
 {
+	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
+	
     I2C_WriteBitSCL(conf, 1);
     I2C_WriteBitSDA(conf, 1);
     
     I2C_WriteBitSDA(conf, 0);
     I2C_WriteBitSCL(conf, 0);
+
 }
 
 void I2C_Stop(I2C_ConfigStruct* conf)
 {
-    I2C_WriteBitSCL(conf, 0);
+	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
+    
+	I2C_WriteBitSCL(conf, 0);
     I2C_WriteBitSDA(conf, 0);
     
     I2C_WriteBitSCL(conf, 1);
     I2C_WriteBitSDA(conf, 1);
+	I2C_SDA_MODE(conf , GPIO_Direction_IN);
 }
 
 uint8_t I2C_WriteByte(I2C_ConfigStruct* conf, uint8_t data)
 {
     int i;
     uint8_t ret;
-    
+	uint8_t sda;
+   
     //Write byte
+	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
     for(i=0; i<8; i++)
     {
-        if((data << i) & 0x80)
-            I2C_WriteBitSDA(conf, 1);
-        else
-            I2C_WriteBitSDA(conf, 0);
-        
+        sda = ((data<<i) & 0x80) ;  	
+		if(sda == 0x80) 
+			I2C_WriteBitSDA(conf, 1);
+		else			
+			I2C_WriteBitSDA(conf, 0);
+		
         I2C_WriteBitSCL(conf, 1);
         I2C_WriteBitSCL(conf, 0);
     }
     //Make clk for receiving ack
-    I2C_WriteBitSDA(conf, 1);
-    I2C_WriteBitSCL(conf, 1);
+    I2C_SDA_MODE(conf , GPIO_Direction_IN);
+	I2C_WriteBitSCL(conf, 1);
+	
     //Read Ack/Nack
     ret = I2C_ReadBitSDA(conf);
     
@@ -237,7 +233,6 @@ void I2C_SendACK(I2C_ConfigStruct* conf)
 {
     I2C_WriteBitSDA(conf, 0);
     I2C_WriteBitSCL(conf, 1);
-    
     I2C_WriteBitSCL(conf, 0);
 }
     
@@ -245,17 +240,15 @@ void I2C_SendNACK(I2C_ConfigStruct* conf)
 {
     I2C_WriteBitSDA(conf, 1);
     I2C_WriteBitSCL(conf, 1);
-    
     I2C_WriteBitSCL(conf, 0);
 }
 
-uint8_t I2C_ReadByte(I2C_ConfigStruct* conf)
+uint8_t I2C_ReadByte(I2C_ConfigStruct* conf, ACK_TypeDef SetValue)
 {
     int i;
     uint8_t ret = 0;
-    
-    I2C_WriteBitSDA(conf, 1); //out enable clear(GPIO is input)
-    
+      
+	I2C_SDA_MODE(conf , GPIO_Direction_IN);   
     //Read byte
     for(i=0; i<8; i++)
     {
@@ -263,7 +256,15 @@ uint8_t I2C_ReadByte(I2C_ConfigStruct* conf)
         ret = (ret << 1) | (I2C_ReadBitSDA(conf));
         I2C_WriteBitSCL(conf, 0);
     }
-        
+	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
+	
+	if(SetValue == NACK )	
+		I2C_SendNACK(conf);
+	else		 	 	    
+		I2C_SendACK(conf);
+	
+    I2C_SDA_MODE(conf , GPIO_Direction_IN);
+	
     return ret;
 }
 
@@ -279,16 +280,12 @@ int I2C_Write(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
         printf("Received NACK at address phase!!\r\n");
         return -1;
     }
-
     //Write data
     for(i=0; i<len; i++)
     {
-        if(I2C_WriteByte(conf, data[i]))
-            return -1;
+        if(I2C_WriteByte(conf, data[i]))  return -1;
     }
-    
     I2C_Stop(conf);
-    
     return 0;//success
 }
 
@@ -308,8 +305,7 @@ int I2C_WriteRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint3
     //Write data
     for(i=0; i<len; i++)
     {
-        if(I2C_WriteByte(conf, data[i]))
-            return -1;
+        if(I2C_WriteByte(conf, data[i]))    return -1;
     }
     
     return 0;//success
@@ -326,21 +322,17 @@ int I2C_Read(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
     {
         printf("Received NACK at address phase!!\r\n");
         return -1;
-    }
-    
+    } 
     //Read data
     for(i=0; i<len; i++)
     {
-        data[i] = I2C_ReadByte(conf);
-        
-        if( i == (len - 1) )
-            I2C_SendNACK(conf);
-        else
-            I2C_SendACK(conf);
+        if( i == (len - 1))		
+			data[i] = I2C_ReadByte(conf,NACK);
+        else					
+			data[i] = I2C_ReadByte(conf,ACK);
+   
     }
-    
-    I2C_Stop(conf);
-    
+    I2C_Stop(conf); 
     return 0;//success
 }
 
@@ -349,25 +341,46 @@ int I2C_ReadRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32
     int i;
     
     I2C_Start(conf);
-    
     //Write addr | read command
     if(I2C_WriteByte(conf, (addr | 1)) != 0)
     {
         printf("Received NACK at address phase!!\r\n");
         return -1;
     }
-    
     //Read data
     for(i=0; i<len; i++)
     {
-        data[i] = I2C_ReadByte(conf);
+        if( i == (len - 1))	
+			data[i] = I2C_ReadByte(conf,NACK);
+        else				
+			data[i] = I2C_ReadByte(conf,ACK);
         
-        if( i == (len - 1) )
-            I2C_SendNACK(conf);
-        else
-            I2C_SendACK(conf);
+		I2C_SendACK(conf);
     }
-        
     return 0;//success
 }
-
+// GPIO MODE (Input/Output setting)
+void I2C_SDA_MODE(I2C_ConfigStruct* conf,GPIODirection_TypeDef Set_VAULE)
+{
+    if(sda_port_num == 0)
+    {
+        if(Set_VAULE == 0)	
+			GPIOA->OUTENCLR = sda_pin_index; //(GPIO INPUT)
+        else
+			GPIOA->OUTENSET = sda_pin_index; //(GPIO OUTPUT)
+    }
+    else if(sda_port_num == 1)
+    {
+        if(Set_VAULE == 0)  
+			GPIOB->OUTENCLR = sda_pin_index;
+        else
+			GPIOB->OUTENSET = sda_pin_index;
+    } 
+    else if(sda_port_num == 2)
+    {
+        if(Set_VAULE == 0)
+			GPIOC->OUTENCLR = sda_pin_index;
+        else	          
+			GPIOC->OUTENSET = sda_pin_index;
+    }
+}
