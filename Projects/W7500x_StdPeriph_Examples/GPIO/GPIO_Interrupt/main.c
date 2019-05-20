@@ -57,18 +57,19 @@ int main(void)
     GPIO_Config();
 
 	printf("W7500x Standard Peripheral Library version : %d.%d.%d\r\n", __W7500X_STDPERIPH_VERSION_MAIN, __W7500X_STDPERIPH_VERSION_SUB1, __W7500X_STDPERIPH_VERSION_SUB2);
-	
+
     printf("SourceClock : %d\r\n", (int) GetSourceClock());
     printf("SystemClock : %d\r\n", (int) GetSystemClock());
 
     printf("System Loop Start\r\n");
-
-    while (1) {
-        GPIO_SetBits(GPIOC, GPIO_Pin_5);
-        GPIO_SetBits(GPIOC, GPIO_Pin_8);
-        GPIO_SetBits(GPIOC, GPIO_Pin_9);
-    }
 	
+	GPIO_SetBits(GPIOC, GPIO_Pin_5);
+	GPIO_SetBits(GPIOC, GPIO_Pin_8);
+	GPIO_SetBits(GPIOC, GPIO_Pin_9);
+    while (1) {
+
+    }
+
 	return 0;
 }
 
@@ -83,7 +84,7 @@ static void UART_Config(void)
     UART_InitTypeDef UART_InitStructure;
 
     UART_StructInit(&UART_InitStructure);
-	
+
 #if defined (USE_WIZWIKI_W7500_EVAL)
     UART_Init(UART1, &UART_InitStructure);
     UART_Cmd(UART1, ENABLE);
