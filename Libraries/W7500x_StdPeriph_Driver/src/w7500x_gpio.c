@@ -102,7 +102,7 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
 
         if (currentpin == pos) {
             if (GPIO_InitStruct->GPIO_Direction == GPIO_Direction_OUT) {
-                GPIOx->OUTENSET |= pos; /* Output Enable Set Register */
+                GPIOx->OUTENSET = pos; /* Output Enable Set Register */
             } else {
                 GPIOx->OUTENCLR = pos; /* Output Enable Clear Register */
             }
