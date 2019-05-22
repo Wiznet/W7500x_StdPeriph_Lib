@@ -55,9 +55,10 @@ int main()
 
 	SystemInit();
 //GPIO setting for I2C
-	conf.scl_port = PAD_PA;
+
+	conf.scl_port = PORT_PA;
 	conf.scl_pin = GPIO_Pin_9;
-    conf.sda_port = PAD_Pa;
+    conf.sda_port = PORT_PA;
 	conf.sda_pin = GPIO_Pin_10;
 //
     I2C_Init(&conf);

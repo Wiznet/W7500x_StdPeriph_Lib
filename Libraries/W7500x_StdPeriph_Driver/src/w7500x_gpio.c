@@ -361,6 +361,7 @@ void GPIO_ToggleBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
     assert_param(IS_GPIO_PIN(GPIO_Pin));
 
     GPIOx->DATAOUT ^= GPIO_Pin;
+
 }
 
 /**
@@ -390,15 +391,15 @@ void GPIO_IT_Init(GPIO_TypeDef* GPIOx, GPIO_ITInitTypeDef* GPIO_ITInitStruct)
         if (currentpin == pos) {
 
             if (GPIO_ITInitStruct->GPIO_IT_Polarity & GPIO_IT_HighRising) {
-                GPIOx->INTTYPESET |= currentpin;
+                GPIOx->INTTYPESET = currentpin;
             } else {
-                GPIOx->INTTYPECLR |= currentpin;
+                GPIOx->INTTYPECLR = currentpin;
             }
 
             if (GPIO_ITInitStruct->GPIO_IT_Type & GPIO_IT_Edge) {
-                GPIOx->INTPOLSET |= currentpin;
+                GPIOx->INTPOLSET = currentpin;
             } else {
-                GPIOx->INTPOLCLR |= currentpin;
+                GPIOx->INTPOLCLR = currentpin;
             }
         }
     }
@@ -433,9 +434,9 @@ void GPIO_ITConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, FunctionalState NewSt
     assert_param(IS_FUNCTIONAL_STATE(NewState));
 
     if (NewState != DISABLE) {
-        GPIOx->INTENSET |= GPIO_Pin;
+        GPIOx->INTENSET = GPIO_Pin;
     } else {
-        GPIOx->INTENCLR |= GPIO_Pin;
+        GPIOx->INTENCLR = GPIO_Pin;
     }
 }
 
