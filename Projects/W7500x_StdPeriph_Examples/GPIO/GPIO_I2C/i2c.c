@@ -26,14 +26,32 @@
 #include <stdio.h>
 #include "i2c.h"
 #include "W7500x_gpio.h"
+/** @addtogroup W7500x_StdPeriph_Examples
+ * @{
+ */
 
+/** @addtogroup GPIO_I2C
+ * @{
+ */
 
+/* Private typedef -----------------------------------------------------------*/
 GPIO_InitTypeDef GPIO_InitDef;
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 uint32_t scl_port_num;
 uint32_t scl_pin_index;
 uint32_t sda_port_num;
 uint32_t sda_pin_index;
+/* Private function prototypes -----------------------------------------------*/
 
+
+
+/**
+ * @brief  I2C Initialaze.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  0 or  1
+ */
 uint32_t I2C_Init(I2C_ConfigStruct* conf)
 {
     scl_port_num = conf->scl_port;
@@ -94,14 +112,19 @@ uint32_t I2C_Init(I2C_ConfigStruct* conf)
     }
     return 0;
 }
-
+/**
+ * @brief  I2C Write Bir SCL.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  data : Write data
+ * @retval  none
+ */
 void I2C_WriteBitSCL(I2C_ConfigStruct* conf, uint8_t data)
 {
     if(scl_port_num == 0)
     {
-        if(data == 1)	
+        if(data == 1)
 			GPIO_SetBits(GPIOA, scl_pin_index);
-        else			
+        else
 			GPIO_ResetBits(GPIOA, scl_pin_index);
     }
     else if(scl_port_num == 1)
@@ -121,7 +144,12 @@ void I2C_WriteBitSCL(I2C_ConfigStruct* conf, uint8_t data)
 			GPIO_ResetBits(GPIOC, scl_pin_index);
     }
 }
-
+/**
+ * @brief  I2C WriteBit SDA.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @para   data : write data
+ * @retval  none
+ */
 void I2C_WriteBitSDA(I2C_ConfigStruct* conf, uint8_t data)
 {
  	if(sda_port_num == 0)
@@ -150,7 +178,11 @@ void I2C_WriteBitSDA(I2C_ConfigStruct* conf, uint8_t data)
     }
 
 }
-
+/**
+ * @brief  I2C Readbit SDA
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  Read GPIO Pin
+ */
 uint8_t I2C_ReadBitSDA(I2C_ConfigStruct* conf)
 {
     if(sda_port_num == 0)
@@ -177,7 +209,11 @@ uint8_t I2C_ReadBitSDA(I2C_ConfigStruct* conf)
     }
     return 0;
 }
-
+/**
+ * @brief  I2C Start Condition.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  none
+ */
 void I2C_Start(I2C_ConfigStruct* conf)
 {
 	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
@@ -189,7 +225,11 @@ void I2C_Start(I2C_ConfigStruct* conf)
     I2C_WriteBitSCL(conf, 0);
 
 }
-
+/**
+ * @brief  I2C Stop Condition.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  none
+ */
 void I2C_Stop(I2C_ConfigStruct* conf)
 {
 	I2C_SDA_MODE(conf , GPIO_Direction_OUT);
@@ -201,7 +241,11 @@ void I2C_Stop(I2C_ConfigStruct* conf)
     I2C_WriteBitSDA(conf, 1);
 	I2C_SDA_MODE(conf , GPIO_Direction_IN);
 }
-
+/**
+ * @brief  I2C Write Byte for 1byte transmission
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  NACK or ACK
+ */
 uint8_t I2C_WriteByte(I2C_ConfigStruct* conf, uint8_t data)
 {
     int i;
@@ -235,26 +279,40 @@ uint8_t I2C_WriteByte(I2C_ConfigStruct* conf, uint8_t data)
 
     return ret;
 }
-
+/**
+ * @brief  I2C Send ACK. When W7500x receive the right data, it must send the ACK signal
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  none
+ */
 void I2C_SendACK(I2C_ConfigStruct* conf)
 {
     I2C_WriteBitSDA(conf, 0);
     I2C_WriteBitSCL(conf, 1);
     I2C_WriteBitSCL(conf, 0);
 }
+/**
+ * @brief  I2C Send NACK. When W7500x receive the wrong data or last data before send stop condition, it must send the NACK signal
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @retval  none
+ */
 void I2C_SendNACK(I2C_ConfigStruct* conf)
 {
     I2C_WriteBitSDA(conf, 1);
     I2C_WriteBitSCL(conf, 1);
     I2C_WriteBitSCL(conf, 0);
 }
-
+/**
+ * @brief  I2C Read Byte.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  SetValue : Select the data, it is NACK or ACK.
+ * @retval  none
+ */
 uint8_t I2C_ReadByte(I2C_ConfigStruct* conf, ACK_TypeDef SetValue)
 {
     int i;
     uint8_t ret = 0;
-      
-	I2C_SDA_MODE(conf , GPIO_Direction_IN);   
+
+	I2C_SDA_MODE(conf , GPIO_Direction_IN);
 
     //Read byte
     for(i=0; i<8; i++)
@@ -275,7 +333,14 @@ uint8_t I2C_ReadByte(I2C_ConfigStruct* conf, ACK_TypeDef SetValue)
 
     return ret;
 }
-
+/**
+ * @brief  I2C Write operation.
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  addr : slave address
+ * @param  data : the data reposity memory
+ * @param  len : Data Length
+ * @retval  0 or -1
+ */
 int I2C_Write(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
 {
     int i;
@@ -297,13 +362,20 @@ int I2C_Write(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
     I2C_Stop(conf);
     return 0;//success
 }
-
+/**
+ * @brief  I2C Write reoeated, it opreates Write operation using new slave address without STOP condition
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  addr : slave address
+ * @param  data : the data reposity memory
+ * @param  len : Data Length
+ * @retval  0 or -1
+ */
 int I2C_WriteRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
 {
     int i;
-    
+
     I2C_Start(conf);
-    
+
 
     //Write addr
     if(I2C_WriteByte(conf, addr) != 0)
@@ -319,34 +391,48 @@ int I2C_WriteRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint3
     }
     return 0;//success
 }
-
+/**
+ * @brief  I2C Read opreation,
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  addr : slave address
+ * @param  data : the data reposity memory
+ * @param  len : Data Length
+ * @retval  0 or -1
+ */
 int I2C_Read(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
 {
     int i;
-    
+
     I2C_Start(conf);
-    
+
 
     //Write addr | read command
     if(I2C_WriteByte(conf, (addr | 1)) != 0)
     {
         printf("Received NACK at address phase!!\r\n");
         return -1;
-    } 
+    }
     //Read data
     for(i=0; i<len; i++)
     {
-        if( i == (len - 1))		
+        if( i == (len - 1))
 			data[i] = I2C_ReadByte(conf,NACK);
-        else					
+        else
 			data[i] = I2C_ReadByte(conf,ACK);
-   
+
     }
-    I2C_Stop(conf); 
+    I2C_Stop(conf);
 
     return 0;//success
 }
-
+/**
+ * @brief  I2C read reoeated, it opreates read operation using new slave address without STOP condition
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  addr : slave address
+ * @param  data : the data reposity memory
+ * @param  len : Data Length
+ * @retval  0 or -1
+ */
 int I2C_ReadRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32_t len)
 {
     int i;
@@ -360,22 +446,29 @@ int I2C_ReadRepeated(I2C_ConfigStruct* conf, uint8_t addr, uint8_t* data, uint32
     //Read data
     for(i=0; i<len; i++)
     {
-        if( i == (len - 1))	
+        if( i == (len - 1))
 			data[i] = I2C_ReadByte(conf,NACK);
-        else				
+        else
 			data[i] = I2C_ReadByte(conf,ACK);
-        
+
 
 		I2C_SendACK(conf);
     }
     return 0;//success
 }
+
+/**
+ * @brief  I2C SDA Mode, it control the GPIO INPUT/OUTPUT (GPIOx->OUTENCLR : GPIO INPUT , GPIOx->OUTENSET : GPIO OUTPUT)
+ * @param  conf :  Select the GPIO peripheral for use such as scl and sda of i2c.
+ * @param  Set_VAULE : Select the data, it is 0 or 1.
+ * @retval  none
+ */
 // GPIO MODE (Input/Output setting)
 void I2C_SDA_MODE(I2C_ConfigStruct* conf,GPIODirection_TypeDef Set_VAULE)
 {
     if(sda_port_num == 0)
     {
-        if(Set_VAULE == 0)	
+        if(Set_VAULE == 0)
 
 			GPIOA->OUTENCLR = sda_pin_index; //(GPIO INPUT)
         else
@@ -383,17 +476,17 @@ void I2C_SDA_MODE(I2C_ConfigStruct* conf,GPIODirection_TypeDef Set_VAULE)
     }
     else if(sda_port_num == 1)
     {
-        if(Set_VAULE == 0)  
+        if(Set_VAULE == 0)
 			GPIOB->OUTENCLR = sda_pin_index;
         else
 			GPIOB->OUTENSET = sda_pin_index;
-    } 
+    }
 
     else if(sda_port_num == 2)
     {
         if(Set_VAULE == 0)
 			GPIOC->OUTENCLR = sda_pin_index;
-        else	          
+        else
 			GPIOC->OUTENSET = sda_pin_index;
     }
 }
