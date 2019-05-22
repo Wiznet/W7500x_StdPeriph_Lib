@@ -93,5 +93,9 @@ Copy all source files from under Projects\W7500x_StdPeriph_Examples\xxx\xxx fold
 ## Revision History
 
 ### v1.0.0
-
 - First release
+
+### v1.0.1 (Release soon)
+- Add i2c example using GPIO
+- Fix some bugs for GPIO function
+- Update GPIO Interrupt examples
