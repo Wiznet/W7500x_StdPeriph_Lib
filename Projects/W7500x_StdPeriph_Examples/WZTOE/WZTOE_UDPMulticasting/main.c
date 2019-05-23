@@ -83,8 +83,10 @@ int main(void)
 #endif
 
     /* Check Link */
-    printf("Link : %s\r\n", PHY_GetLinkStatus() == PHY_LINK_ON ? "On" : "Off");
-
+    printf("Link is ");
+    while (!PHY_GetLinkStatus()) ;
+    printf("OK\n\r");
+	
     /* Network information setting */
     Network_Config();
 
