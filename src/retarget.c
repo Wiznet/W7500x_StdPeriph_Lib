@@ -45,15 +45,14 @@ uint8_t S_UartPutc(uint8_t ch);
 void S_UartPuts(uint8_t *str);
 uint8_t S_UartGetc(void);
 
-#if defined ( __CC_ARM   )
+#if defined ( __CC_ARM   ) || ( __ARMCC_VERSION   )
 /******************************************************************************/
 /* Retarget functions for ARM DS-5 Professional / Keil MDK                    */
 /******************************************************************************/
 #include <time.h>
 #include <rt_misc.h>
-#pragma import(__use_no_semihosting_swi)
+__asm(".global __use_no_semihosting_swi\n\t");
 
-struct __FILE {int handle; /* Add whatever you need here */};
 FILE __stdout;
 FILE __stdin;
 
