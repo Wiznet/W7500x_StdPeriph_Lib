@@ -86,7 +86,9 @@ void _sys_exit(int return_code) {
 
 __attribute__ ((used)) int _write(int fd, char *ptr, int len)
 {
-    size_t i;
+	(void)fd;
+
+    int i;
     for (i = 0; i < len; i++) {
         UART_SEND_BYTE(ptr[i]);  // call character output function
     }
@@ -121,11 +123,10 @@ void UartPuts(UART_TypeDef* UARTx, uint8_t *str)
     uint8_t ch;
 
     do {
-        ch = *str;
+        ch = *str++;
         if (ch != (uint8_t) 0x0) {
             UartPutc(UARTx, ch);
         }
-        *str++;
     } while (ch != 0);
 }
 
@@ -149,11 +150,10 @@ void S_UartPuts(uint8_t *str)
     uint8_t ch;
 
     do {
-        ch = *str;
+        ch = *str++;
         if (ch != (uint8_t) 0x0) {
             S_UART_SendData(ch);
         }
-        *str++;
     } while (ch != 0);
 }
 
