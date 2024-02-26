@@ -110,10 +110,12 @@ void ADC_StartOfConversion(void)
  */
 uint16_t ADC_GetConversionValue(void)
 {
+    uint16_t ret=0;
     if (adc_conversion_start == SET) {
         adc_conversion_start = RESET;
-        return (uint16_t) ADC->DATA;
+        ret=  ADC->DATA;
     }
+    return ret;
 }
 
 /**
