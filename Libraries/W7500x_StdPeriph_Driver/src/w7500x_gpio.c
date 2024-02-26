@@ -309,9 +309,6 @@ void GPIO_ResetBits(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
  */
 void GPIO_WriteBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, BitAction BitVal)
 {
-    uint32_t temp_gpio_lb;
-    uint32_t temp_gpio_ub;
-
     /* Check the parameters */
     assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
     assert_param(IS_GET_GPIO_PIN(GPIO_Pin));

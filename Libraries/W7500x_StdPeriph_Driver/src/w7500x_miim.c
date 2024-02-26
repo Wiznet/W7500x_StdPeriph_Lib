@@ -134,6 +134,7 @@ FlagStatus PHY_Init(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin_MDC, uint16_t GPIO_Pi
  */
 void PHY_Reset(Reset_Type reset)
 {
+	(void)reset;
 /*
 if (reset == Hardware) {
 #ifdef W7500P
