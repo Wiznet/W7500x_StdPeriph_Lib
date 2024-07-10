@@ -391,15 +391,15 @@ void GPIO_IT_Init(GPIO_TypeDef* GPIOx, GPIO_ITInitTypeDef* GPIO_ITInitStruct)
         if (currentpin == pos) {
 
             if (GPIO_ITInitStruct->GPIO_IT_Polarity & GPIO_IT_HighRising) {
-                GPIOx->INTTYPESET = currentpin;
-            } else {
-                GPIOx->INTTYPECLR = currentpin;
-            }
-
-            if (GPIO_ITInitStruct->GPIO_IT_Type & GPIO_IT_Edge) {
                 GPIOx->INTPOLSET = currentpin;
             } else {
                 GPIOx->INTPOLCLR = currentpin;
+            }
+
+            if (GPIO_ITInitStruct->GPIO_IT_Type & GPIO_IT_Edge) {
+                GPIOx->INTTYPESET = currentpin;
+            } else {
+                GPIOx->INTTYPECLR = currentpin;
             }
         }
     }
