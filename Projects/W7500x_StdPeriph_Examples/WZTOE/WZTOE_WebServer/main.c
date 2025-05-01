@@ -114,10 +114,22 @@ int main(void)
             }
             else if (ret == DHCP_FAILED) {
                 dhcp_retry++;
+                printf("DHCP attempt %d failed, retrying in 5 seconds...\r\n", dhcp_retry);
+                delay(5000);  // Wait 5 seconds between retries
             }
 
             if (dhcp_retry > 3) {
-                printf("DHCP Fail\r\n");
+                printf("DHCP Fail after %d attempts\r\n", dhcp_retry);
+                // Set default static IP as fallback
+                uint8_t default_ip[4] = {192, 168, 1, 100};    // Default IP address
+                uint8_t default_gw[4] = {192, 168, 1, 1};      // Default gateway
+                uint8_t default_sn[4] = {255, 255, 255, 0};    // Netmask: /24 (255.255.255.0) - 254 hosts
+                uint8_t default_dns[4] = {8, 8, 8, 8};         // Google Public DNS as fallback
+                memcpy(gWIZNETINFO.ip, default_ip, 4);
+                memcpy(gWIZNETINFO.gw, default_gw, 4);
+                memcpy(gWIZNETINFO.sn, default_sn, 4);
+                memcpy(gWIZNETINFO.dns, default_dns, 4);
+                ctlnetwork(CN_SET_NETINFO, (void*) &gWIZNETINFO);
                 break;
             }
         }
@@ -298,39 +310,86 @@ int32_t WebServer(uint8_t sn, uint8_t* buf, uint16_t port)
                 if (ret <= 0) return ret;
                 printf("%s", buf);
 
+                // Format the version string first
+                char version_str[32];
+                snprintf(version_str, sizeof(version_str), "%d.%d.%d", 
+                        __W7500X_STDPERIPH_VERSION_MAIN, 
+                        __W7500X_STDPERIPH_VERSION_SUB1, 
+                        __W7500X_STDPERIPH_VERSION_SUB2);
+
+                // Send HTTP headers
                 ret = send(sn, "HTTP/1.1 200 OK\r\n"
                         "Content-Type: text/html\r\n"
                         "Connection: close\r\n"
                         "Refresh: 5\r\n"
-                        "\r\n"
-                        "<!DOCTYPE HTML>\r\n"
-                        "<html>\r\n", sizeof("HTTP/1.1 200 OK\r\n"
+                        "\r\n", 
+                        sizeof("HTTP/1.1 200 OK\r\n"
                         "Content-Type: text/html\r\n"
                         "Connection: close\r\n"
                         "Refresh: 5\r\n"
-                        "\r\n"
-                        "<!DOCTYPE HTML>\r\n"
-                        "<html>\r\n") - 1);
+                        "\r\n") - 1);
                 if (ret < 0) {
                     close(sn);
                     return ret;
                 }
 
+                // Send HTML header
+                ret = send(sn, "<!DOCTYPE HTML>\r\n"
+                        "<html>\r\n"
+                        "<head><title>W7500x Web Server</title></head>\r\n"
+                        "<body>\r\n"
+                        "<h1>W7500x Web Server</h1>\r\n"
+                        "<p>W7500x Standard Peripheral Library version: ", 
+                        sizeof("<!DOCTYPE HTML>\r\n"
+                        "<html>\r\n"
+                        "<head><title>W7500x Web Server</title></head>\r\n"
+                        "<body>\r\n"
+                        "<h1>W7500x Web Server</h1>\r\n"
+                        "<p>W7500x Standard Peripheral Library version: ") - 1);
+                if (ret < 0) {
+                    close(sn);
+                    return ret;
+                }
+
+                // Send version string
+                ret = send(sn, version_str, strlen(version_str));
+                if (ret < 0) {
+                    close(sn);
+                    return ret;
+                }
+
+                // Send closing version paragraph
+                ret = send(sn, "</p>\r\n", sizeof("</p>\r\n") - 1);
+                if (ret < 0) {
+                    close(sn);
+                    return ret;
+                }
+
+                // Enable ADC once before the loop
+                ADC_Cmd(ENABLE);
+
                 for (i = 0; i < ADC_Channel_4; i++) {
-                    ADC_Cmd(ENABLE);
                     ADC_ChannelConfig(i);
                     ADC_StartOfConversion();
-                    sprintf(adc_buf, "analog input %d is %d<br />\r\n", i, ADC_GetConversionValue());
+                    // Use snprintf to prevent buffer overflow
+                    snprintf(adc_buf, sizeof(adc_buf), "analog input %d is %d<br />\r\n", i, ADC_GetConversionValue());
                     ret = send(sn, adc_buf, strlen(adc_buf));
                     if (ret < 0) {
+                        ADC_Cmd(DISABLE);  // Disable ADC before closing socket
                         close(sn);
                         return ret;
                     }
-                    ADC_Cmd(DISABLE);
-                    memset(adc_buf, '\0', 128);
+                    memset(adc_buf, '\0', sizeof(adc_buf));
                 }
 
-                ret = send(sn, "</html>\r\n", sizeof("</html>\r\n") - 1);
+                // Disable ADC after the loop
+                ADC_Cmd(DISABLE);
+
+                // Send HTML footer
+                ret = send(sn, "</body>\r\n"
+                        "</html>\r\n", 
+                        sizeof("</body>\r\n"
+                        "</html>\r\n") - 1);
                 if (ret < 0) {
                     close(sn);
                     return ret;

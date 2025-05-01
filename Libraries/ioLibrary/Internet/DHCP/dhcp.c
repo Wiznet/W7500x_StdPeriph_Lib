@@ -1,12 +1,12 @@
 /*******************************************************************************************************************************************************
- * Copyright ¨Ï 2016 <WIZnet Co.,Ltd.> 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the ¡°Software¡±), 
+ * Copyright ï¿½ï¿½ 2016 <WIZnet Co.,Ltd.> 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the ï¿½ï¿½Softwareï¿½ï¿½), 
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
  * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
- * THE SOFTWARE IS PROVIDED ¡°AS IS¡±, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * THE SOFTWARE IS PROVIDED ï¿½ï¿½AS ISï¿½ï¿½, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -234,12 +234,19 @@ void default_ip_update(void);
 void default_ip_conflict(void);
 
 /* Callback handler */
-void (*dhcp_ip_assign)(void)   = default_ip_assign;     /* handler to be called when the IP address from DHCP server is first assigned */
-void (*dhcp_ip_update)(void)   = default_ip_update;     /* handler to be called when the IP address from DHCP server is updated */
-void (*dhcp_ip_conflict)(void) = default_ip_conflict;   /* handler to be called when the IP address from DHCP server is conflict */
+static dhcp_ip_assign_cb dhcp_ip_assign = default_ip_assign;     /* handler to be called when the IP address from DHCP server is first assigned */
+static dhcp_ip_update_cb dhcp_ip_update = default_ip_update;     /* handler to be called when the IP address from DHCP server is updated */
+static dhcp_ip_conflict_cb dhcp_ip_conflict = default_ip_conflict;   /* handler to be called when the IP address from DHCP server is conflict */
 
-void reg_dhcp_cbfunc(void(*ip_assign)(void), void(*ip_update)(void), void(*ip_conflict)(void));
-
+void reg_dhcp_cbfunc(dhcp_ip_assign_cb ip_assign, dhcp_ip_update_cb ip_update, dhcp_ip_conflict_cb ip_conflict)
+{
+   dhcp_ip_assign   = default_ip_assign;
+   dhcp_ip_update   = default_ip_update;
+   dhcp_ip_conflict = default_ip_conflict;
+   if(ip_assign)   dhcp_ip_assign = ip_assign;
+   if(ip_update)   dhcp_ip_update = ip_update;
+   if(ip_conflict) dhcp_ip_conflict = ip_conflict;
+}
 
 /* send DISCOVER message to DHCP server */
 void     send_DHCP_DISCOVER(void);
@@ -260,7 +267,7 @@ uint8_t  check_DHCP_timeout(void);
 void     reset_DHCP_timeout(void);
 
 /* Parse message as OFFER and ACK and NACK from DHCP server.*/
-int8_t   parseDHCPCMSG(void);
+int8_t   parseDHCPMSG(void);
 
 /* The default handler of ip assign first */
 void default_ip_assign(void)
@@ -287,17 +294,6 @@ void default_ip_conflict(void)
 	setMR(MR_RST);
 	getMR(); // for delay
 	setSHAR(DHCP_CHADDR);
-}
-
-/* register the call back func. */
-void reg_dhcp_cbfunc(void(*ip_assign)(void), void(*ip_update)(void), void(*ip_conflict)(void))
-{
-   dhcp_ip_assign   = default_ip_assign;
-   dhcp_ip_update   = default_ip_update;
-   dhcp_ip_conflict = default_ip_conflict;
-   if(ip_assign)   dhcp_ip_assign = ip_assign;
-   if(ip_update)   dhcp_ip_update = ip_update;
-   if(ip_conflict) dhcp_ip_conflict = ip_conflict;
 }
 
 /* make the common DHCP message */
@@ -607,6 +603,15 @@ int8_t parseDHCPMSG(void)
    #endif
    }
    else return 0;
+
+   // Validate message length is at least the minimum DHCP message size
+   if (len < 240) {
+      #ifdef _DHCP_DEBUG_
+         printf("DHCP message too short: %d bytes\r\n", len);
+      #endif
+      return 0;
+   }
+
 	if (svr_port == DHCP_SERVER_PORT) {
       // compare mac address
 		if ( (pDHCPMSG->chaddr[0] != DHCP_CHADDR[0]) || (pDHCPMSG->chaddr[1] != DHCP_CHADDR[1]) ||
@@ -618,50 +623,96 @@ int8_t parseDHCPMSG(void)
 		p = p + 240;      // 240 = sizeof(RIP_MSG) + MAGIC_COOKIE size in RIP_MSG.opt - sizeof(RIP_MSG.opt)
 		e = p + (len - 240);
 
-		while ( p < e ) {
+		while (p < e) {
+         // Validate we have at least 2 bytes for option code and length
+         if (p + 1 >= e) {
+            #ifdef _DHCP_DEBUG_
+               printf("DHCP option parsing error: insufficient space for option header\r\n");
+            #endif
+            break;
+         }
 
-			switch ( *p ) {
+         uint8_t opt_code = *p++;
+         uint8_t opt_len = *p++;
 
-   			case endOption :
+         // Validate option length doesn't exceed remaining buffer
+         if (p + opt_len > e) {
+            #ifdef _DHCP_DEBUG_
+               printf("DHCP option parsing error: option length %d exceeds remaining buffer\r\n", opt_len);
+            #endif
+            break;
+         }
+
+			switch (opt_code) {
+   			case endOption:
    			   p = e;   // for break while(p < e)
    				break;
-            case padOption :
-   				p++;
+            case padOption:
+   				// No length field for pad option
    				break;
-   			case dhcpMessageType :
-   				p++;
-   				p++;
+   			case dhcpMessageType:
+               // Message type option must be exactly 1 byte
+               if (opt_len != 1) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP message type option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  break;
+               }
    				type = *p++;
    				break;
-   			case subnetMask :
-   				p++;
-   				p++;
+   			case subnetMask:
+               // Subnet mask must be exactly 4 bytes
+               if (opt_len != 4) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP subnet mask option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  p += opt_len;
+                  break;
+               }
    				DHCP_allocated_sn[0] = *p++;
    				DHCP_allocated_sn[1] = *p++;
    				DHCP_allocated_sn[2] = *p++;
    				DHCP_allocated_sn[3] = *p++;
    				break;
-   			case routersOnSubnet :
-   				p++;
-   				opt_len = *p++;
+   			case routersOnSubnet:
+               // Router option must be at least 4 bytes (single router)
+               if (opt_len < 4) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP router option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  p += opt_len;
+                  break;
+               }
    				DHCP_allocated_gw[0] = *p++;
    				DHCP_allocated_gw[1] = *p++;
    				DHCP_allocated_gw[2] = *p++;
    				DHCP_allocated_gw[3] = *p++;
-   				p = p + (opt_len - 4);
+   				p += (opt_len - 4);  // Skip any additional routers
    				break;
-   			case dns :
-   				p++;
-   				opt_len = *p++;
+   			case dns:
+               // DNS option must be at least 4 bytes (single DNS server)
+               if (opt_len < 4) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP DNS option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  p += opt_len;
+                  break;
+               }
    				DHCP_allocated_dns[0] = *p++;
    				DHCP_allocated_dns[1] = *p++;
    				DHCP_allocated_dns[2] = *p++;
    				DHCP_allocated_dns[3] = *p++;
-   				p = p + (opt_len - 4);
+   				p += (opt_len - 4);  // Skip any additional DNS servers
    				break;
-   			case dhcpIPaddrLeaseTime :
-   				p++;
-   				opt_len = *p++;
+   			case dhcpIPaddrLeaseTime:
+               // Lease time must be exactly 4 bytes
+               if (opt_len != 4) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP lease time option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  p += opt_len;
+                  break;
+               }
    				dhcp_lease_time  = *p++;
    				dhcp_lease_time  = (dhcp_lease_time << 8) + *p++;
    				dhcp_lease_time  = (dhcp_lease_time << 8) + *p++;
@@ -670,18 +721,26 @@ int8_t parseDHCPMSG(void)
                dhcp_lease_time = 10;
  				#endif
    				break;
-   			case dhcpServerIdentifier :
-   				p++;
-   				opt_len = *p++;
+   			case dhcpServerIdentifier:
+               // Server identifier must be exactly 4 bytes
+               if (opt_len != 4) {
+                  #ifdef _DHCP_DEBUG_
+                     printf("DHCP server identifier option has invalid length: %d\r\n", opt_len);
+                  #endif
+                  p += opt_len;
+                  break;
+               }
    				DHCP_SIP[0] = *p++;
    				DHCP_SIP[1] = *p++;
    				DHCP_SIP[2] = *p++;
    				DHCP_SIP[3] = *p++;
    				break;
-   			default :
-   				p++;
-   				opt_len = *p++;
-   				p += opt_len;
+   			default:
+               // Unknown option - log it in debug mode and skip it
+               #ifdef _DHCP_DEBUG_
+                  printf("Unknown DHCP option %d with length %d\r\n", opt_code, opt_len);
+               #endif
+               p += opt_len;
    				break;
 			} // switch
 		} // while

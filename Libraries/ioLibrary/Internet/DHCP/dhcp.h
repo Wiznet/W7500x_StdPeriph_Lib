@@ -1,12 +1,12 @@
 /*******************************************************************************************************************************************************
- * Copyright ¨Ï 2016 <WIZnet Co.,Ltd.> 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the ¡°Software¡±), 
+ * Copyright ï¿½ï¿½ 2016 <WIZnet Co.,Ltd.> 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the ï¿½ï¿½Softwareï¿½ï¿½), 
  * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
  * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
- * THE SOFTWARE IS PROVIDED ¡°AS IS¡±, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * THE SOFTWARE IS PROVIDED ï¿½ï¿½AS ISï¿½ï¿½, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -77,6 +77,10 @@
 #define DHCP_SERVER_PORT      	67	      ///< DHCP server port number
 #define DHCP_CLIENT_PORT         68	      ///< DHCP client port number
 
+/* Callback function types for DHCP events */
+typedef void (*dhcp_ip_assign_cb)(void);    ///< Callback type for IP assignment
+typedef void (*dhcp_ip_update_cb)(void);    ///< Callback type for IP update
+typedef void (*dhcp_ip_conflict_cb)(void);  ///< Callback type for IP conflict
 
 #define MAGIC_COOKIE             0x63825363  ///< Any number. You can be modifyed it any number
 
@@ -114,7 +118,7 @@ void DHCP_time_handler(void);
  * @param ip_update   - callback func when IP is changed
  * @prarm ip_conflict - callback func when the assigned IP is conflict with others.
  */
-void reg_dhcp_cbfunc(void(*ip_assign)(void), void(*ip_update)(void), void(*ip_conflict)(void));
+void reg_dhcp_cbfunc(dhcp_ip_assign_cb ip_assign, dhcp_ip_update_cb ip_update, dhcp_ip_conflict_cb ip_conflict);
 
 /*
  * @brief DHCP client in the main loop
@@ -163,5 +167,15 @@ void getDNSfromDHCP(uint8_t* ip);
  * @retrun unit 1s
  */
 uint32_t getDHCPLeasetime(void);
+
+/* Internal DHCP functions - do not call directly */
+void default_ip_assign(void);    ///< Default handler for IP assignment
+void default_ip_update(void);    ///< Default handler for IP update
+void default_ip_conflict(void);  ///< Default handler for IP conflict
+void makeDHCPMSG(void);          ///< Create DHCP message
+void send_DHCP_DISCOVER(void);   ///< Send DHCP discover message
+void send_DHCP_REQUEST(void);    ///< Send DHCP request message
+void send_DHCP_DECLINE(void);    ///< Send DHCP decline message
+void reset_DHCP_timeout(void);   ///< Reset DHCP timeout counter
 
 #endif	/* _DHCP_H_ */
